@@ -11,6 +11,7 @@ package eepromprogrammer;
 public class SerialPortInterface
 {
     public native boolean portNameValid(String portName);
+    public native String firstPortAvailable();
     
     public SerialPortInterface()
     {

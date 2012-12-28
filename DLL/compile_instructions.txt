@@ -13,3 +13,6 @@ DLL\eepromprogrammer_SerialPortInterface.c      #path of C file to compile
 
 On my computer, I had to invoke cl as follows
 cl -I DLL -I "C:\Program Files\Java\jdk1.7.0_02\include" -I "C:\Program Files\Java\jdk1.7.0_02\include\win32" -LD DLL\eepromprogrammer_SerialPortInterface.c
+
+this will cause four files to be created in the root directory of the project.  All can be deleted except the .dll, which should be moved to the DLL directory.
+I hope to have a makefile for this soon, but I'm not certain of how to use a makefile with the cl compiler.

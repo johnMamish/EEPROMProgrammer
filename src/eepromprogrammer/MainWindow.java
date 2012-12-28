@@ -64,7 +64,9 @@ public class MainWindow extends JFrame
     {
         //debug fun to test native serial port method(s)
         SerialPortInterface foo = new SerialPortInterface();
-        System.out.println(foo.portNameValid("COM8"));
+        long fooTime = System.currentTimeMillis();
+        System.out.println(foo.firstPortAvailable());
+        System.out.println("time taken: " + Long.toString(System.currentTimeMillis()-fooTime) + "ms");
         
         //set up menu bar
         //<editor-fold>

@@ -15,6 +15,14 @@ extern "C" {
 JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_portNameValid
   (JNIEnv *, jobject, jstring);
 
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    firstPortAvailable
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_eepromprogrammer_SerialPortInterface_firstPortAvailable
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif
