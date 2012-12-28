@@ -62,6 +62,10 @@ public class MainWindow extends JFrame
     
     public MainWindow()
     {
+        //debug fun to test native serial port method(s)
+        SerialPortInterface foo = new SerialPortInterface();
+        System.out.println(foo.portNameValid("COM8"));
+        
         //set up menu bar
         //<editor-fold>
         //first, set up submenus
