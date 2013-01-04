@@ -23,6 +23,78 @@ JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_portNameVal
 JNIEXPORT jstring JNICALL Java_eepromprogrammer_SerialPortInterface_firstPortAvailable
   (JNIEnv *, jobject);
 
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    writeToPort
+ * Signature: (Ljava/lang/String;[B)Z
+ */
+JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_writeToPort
+  (JNIEnv *, jobject, jstring, jbyteArray);
+
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    setBaudRate
+ * Signature: (Ljava/lang/String;I)I
+ */
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setBaudRate
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    setStopBits
+ * Signature: (Ljava/lang/String;I)I
+ */
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setStopBits
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    setByteSize
+ * Signature: (Ljava/lang/String;I)I
+ */
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setByteSize
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    nativeSetParity
+ * Signature: (Ljava/lang/String;I)I
+ */
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_nativeSetParity
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    setParityOn
+ * Signature: (Ljava/lang/String;Z)I
+ */
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setParityOn
+  (JNIEnv *, jobject, jstring, jboolean);
+
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    setOutXCTSDSR
+ * Signature: (Ljava/lang/String;Z)I
+ */
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setOutXCTSDSR
+  (JNIEnv *, jobject, jstring, jboolean);
+
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    setDTRControl
+ * Signature: (Ljava/lang/String;I)I
+ */
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDTRControl
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     eepromprogrammer_SerialPortInterface
+ * Method:    setDiscardNull
+ * Signature: (Ljava/lang/String;Z)I
+ */
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDiscardNull
+  (JNIEnv *, jobject, jstring, jboolean);
+
 #ifdef __cplusplus
 }
 #endif

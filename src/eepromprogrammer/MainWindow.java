@@ -65,8 +65,15 @@ public class MainWindow extends JFrame
         //debug fun to test native serial port method(s)
         SerialPortInterface foo = new SerialPortInterface();
         long fooTime = System.currentTimeMillis();
-        System.out.println(foo.firstPortAvailable());
-        System.out.println("time taken: " + Long.toString(System.currentTimeMillis()-fooTime) + "ms");
+        String portToUse = foo.firstPortAvailable();
+        System.out.println(portToUse + " is the port we're using.");
+        foo.setUpStandard(portToUse);
+        
+        System.out.println("time taken to find port: " + Long.toString(System.currentTimeMillis()-fooTime) + "ms");
+        
+        System.out.println("setting baud rate gave the result " + foo.setBaudRate(portToUse, 115200));
+        
+        System.out.println("result = " + foo.writeToPort(portToUse, " This is awesome!".getBytes()));
         
         //set up menu bar
         //<editor-fold>
