@@ -4,24 +4,25 @@
 #include <Windows.h>
 #include <conio.h>
 
-JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_portNameValid(JNIEnv* env, jobject obj, jstring string)
+JNIEXPORT jlong JNICALL Java_eepromprogrammer_SerialPortInterface_openPort(JNIEnv* env, jobject obj, jstring string)
 {
 	HANDLE portHandle = CreateFile((*env)->GetStringUTFChars(env, string, 0),  
 			GENERIC_READ | GENERIC_WRITE, 
 			0, 
 			0, 
 			OPEN_EXISTING,
-			FILE_FLAG_OVERLAPPED,
+			FILE_ATTRIBUTE_NORMAL,
 			0);
 
-	if(portHandle == INVALID_HANDLE_VALUE)
-	{
+	return (jlong)portHandle;
+}
+
+JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_closePort(JNIEnv* env, jobject obj, jlong portHandle)
+{
+	if(CloseHandle((HANDLE)portHandle) == 0)
 		return JNI_FALSE;
-	}
 	else
-	{
 		return JNI_TRUE;
-	}
 }
 
 JNIEXPORT jstring JNICALL Java_eepromprogrammer_SerialPortInterface_firstPortAvailable(JNIEnv* env, jobject obj)
@@ -45,7 +46,7 @@ JNIEXPORT jstring JNICALL Java_eepromprogrammer_SerialPortInterface_firstPortAva
 					0,
 					0,
 					OPEN_EXISTING,
-					FILE_FLAG_OVERLAPPED,
+					FILE_ATTRIBUTE_NORMAL,
 					0);
 		if(portHandle != INVALID_HANDLE_VALUE)
 		{
@@ -68,16 +69,15 @@ JNIEXPORT jstring JNICALL Java_eepromprogrammer_SerialPortInterface_firstPortAva
 	return (*env)->NewStringUTF(env, javaPortName);
 }
 
-JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_writeToPort(JNIEnv* env, jobject obj, jstring string, jbyteArray data)
+/*JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_writeToPort(JNIEnv* env, jobject obj, jstring string, jbyteArray data)
 {	
 	//handle to the port
 	HANDLE portHandle;
 	
-	//for the writefile function needs this.
+	//the writefile function needs this.
 	DWORD numBytesWritten;
 	
 	jsize dataLength;
-	//jboolean copyMade = JNI_FALSE;
 	jbyte* nativeData = 0;
 	int numBytesToWrite = 1;
 	int writeSuccessful;
@@ -123,6 +123,104 @@ JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_writeToPort
 	
 	//no errors.  Ret true.
 	return JNI_TRUE;
+}*/
+
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_writeToPort(JNIEnv* env, jobject obj, jlong portHandle, jbyteArray data)
+{
+	DWORD numBytesWritten;
+	
+	jsize dataLength;
+	jbyte* nativeData = 0;
+	int numBytesToWrite = 1;
+	int writeSuccessful;
+	
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
+	{
+		return (jint)1;
+	}
+	
+	//successfully opened a port.  Write data to it.
+	dataLength = (*env)->GetArrayLength(env, data);
+	
+	//if the length of the data array is 0, we can't do nuttin.
+	if(dataLength == 0)
+	{
+		return (jint)2;
+	}
+
+	nativeData = (*env)->GetByteArrayElements(env, data, 0);
+	
+	//make an int to hold bytes actually written, and actually write data.
+	//if the WriteFile function returns 0, data write was unsuccessful.
+	writeSuccessful = WriteFile((HANDLE)portHandle, nativeData, dataLength, &numBytesWritten, NULL);
+	//(*env)->ReleaseByteArrayElements(env, data, nativeData, 0);
+	//CloseHandle(portHandle);
+	
+	if(writeSuccessful == 0)
+		return (jint)3;
+	
+	//if less bytes than specified were written, we in trubble.
+	if(numBytesWritten < numBytesToWrite)
+		return (jint)4;
+	
+	//no errors.  Ret true.
+	return (jint)0;
+}
+
+JNIEXPORT jbyteArray JNICALL Java_eepromprogrammer_SerialPortInterface_readPort(JNIEnv* env, jobject obj, jlong portHandle, jint length)
+{
+	//we first read up to length bytes from the serial port, then, make a new byte array with that data copied into it and return it.
+
+	// instance an object of COMMTIMEOUTS.
+	COMMTIMEOUTS comTimeOut;  
+	
+	//record how many were read.
+	DWORD numBytesRead;
+	jbyteArray retArr;
+	jbyte* retArrCopy;
+	
+	int readSuccessful;
+	char* container = (char*)malloc((int)length*sizeof(char));
+	
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
+	{
+		return (jbyteArray)0;
+	}
+	
+	// Specify time-out between charactor for receiving.
+	comTimeOut.ReadIntervalTimeout = 3;
+	// Specify value that is multiplied 
+	// by the requested number of bytes to be read. 
+	comTimeOut.ReadTotalTimeoutMultiplier = 3;
+	// Specify value is added to the product of the 
+	// ReadTotalTimeoutMultiplier member
+	comTimeOut.ReadTotalTimeoutConstant = 2;
+	// Specify value that is multiplied 
+	// by the requested number of bytes to be sent. 
+	comTimeOut.WriteTotalTimeoutMultiplier = 3;
+	// Specify value is added to the product of the 
+	// WriteTotalTimeoutMultiplier member
+	comTimeOut.WriteTotalTimeoutConstant = 2;
+	// set the time-out parameter into device control.
+	SetCommTimeouts((HANDLE)portHandle,&comTimeOut);
+	
+	readSuccessful = ReadFile((HANDLE)portHandle, container, length, &numBytesRead, NULL);
+
+	//if read was not successful, return null.
+	if(readSuccessful == 0)
+	{
+		free(container);
+		return (jbyteArray)0;
+	}
+	
+	//create a new byte array and copy the contents of the container over to it.
+	retArr = (*env)->NewByteArray(env, (jsize)numBytesRead);
+	retArrCopy = (*env)->GetByteArrayElements(env, retArr, 0);
+	memcpy(retArrCopy, container, (int)numBytesRead);
+	(*env)->ReleaseByteArrayElements(env, retArr, retArrCopy, 0);
+	
+	free(container);
+	return retArr;
 }
 
 //error codes
@@ -132,16 +230,15 @@ JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_writeToPort
 //3 - error closing file
 //4 - error manipulating port settings
 //4 - other error
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setBaudRate(JNIEnv* env, jobject obj, jstring string, jint brate)
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setBaudRate(JNIEnv* env, jobject obj, jlong portHandle, jint brate)
 {
 	DCB portOptions;
 	DWORD newBrate;
 	DWORD validBrates[] = {CBR_110, CBR_300, CBR_600, CBR_1200, CBR_2400, CBR_4800, CBR_9600, CBR_14400, CBR_19200, CBR_38400, CBR_57600, CBR_115200, CBR_128000, CBR_256000};
 	DWORD setBrate = 0;
-	HANDLE portHandle;
 	const int numOfBrates = 14;
 	int nativeTargetBrate = (int)brate;
-	const jbyte* name = (*env)->GetStringUTFChars(env, string, 0);
+	//const jbyte* name = (*env)->GetStringUTFChars(env, string, 0);
 	
 	//make sure the brate is "legal"
 	int i;
@@ -159,21 +256,13 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setBaudRate(JNI
 		return (jint)1;
 	}
 	
-	portHandle = CreateFile((LPCSTR)name,
-				GENERIC_READ | GENERIC_WRITE,
-				0,
-				0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				0);
-	
-	if(portHandle == INVALID_HANDLE_VALUE)
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
 	}
 	
 	//all preliminary stuff done, time to actually change the configuration.
-	if(GetCommState(portHandle, &portOptions) == 0)
+	if(GetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
@@ -181,41 +270,27 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setBaudRate(JNI
 	portOptions.BaudRate = setBrate;
 	portOptions.DCBlength = sizeof(DCB);
 	
-	if(SetCommState(portHandle, &portOptions) == 0)
+	if(SetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
-	}
-	
-	if(CloseHandle(portHandle) == 0)
-	{
-		return (jint)3;
 	}
 	
 	return (jint)portOptions.BaudRate;
 }
 
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setStopBits(JNIEnv* env, jobject obj, jstring portName, jint stopBits)
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setStopBits(JNIEnv* env, jobject obj, jlong portHandle, jint stopBits)
 {
 	DCB portOptions;
-	HANDLE portHandle;
 	DWORD nativeStopBits = (DWORD)stopBits;
-	const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
+	//const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
 	
-	portHandle = CreateFile((LPCSTR)name,
-				GENERIC_READ | GENERIC_WRITE,
-				0,
-				0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				0);
-	
-	if(portHandle == INVALID_HANDLE_VALUE)
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
 	}
 	
 	//all preliminary stuff done, time to actually change the configuration.
-	if(GetCommState(portHandle, &portOptions) == 0)
+	if(GetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
@@ -223,41 +298,27 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setStopBits(JNI
 	portOptions.StopBits = nativeStopBits;
 	portOptions.DCBlength = sizeof(DCB);
 	
-	if(SetCommState(portHandle, &portOptions) == 0)
+	if(SetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
-	
-	if(CloseHandle(portHandle) == 0)
-	{
-		return (jint)3;
-	}
-	
+
 	return (jint)0;
 }
 
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setByteSize(JNIEnv* env, jobject obj, jstring portName, jint byteSize)
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setByteSize(JNIEnv* env, jobject obj, jlong portHandle, jint byteSize)
 {
 	DCB portOptions;
-	HANDLE portHandle;
 	DWORD nativeByteSize = (DWORD)byteSize;
-	const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
+	//const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
 	
-	portHandle = CreateFile((LPCSTR)name,
-				GENERIC_READ | GENERIC_WRITE,
-				0,
-				0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				0);
-	
-	if(portHandle == INVALID_HANDLE_VALUE)
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
 	}
 	
 	//all preliminary stuff done, time to actually change the configuration.
-	if(GetCommState(portHandle, &portOptions) == 0)
+	if(GetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
@@ -265,41 +326,26 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setByteSize(JNI
 	portOptions.ByteSize = nativeByteSize;
 	portOptions.DCBlength = sizeof(DCB);
 	
-	if(SetCommState(portHandle, &portOptions) == 0)
+	if(SetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
-	}
-	
-	if(CloseHandle(portHandle) == 0)
-	{
-		return (jint)3;
 	}
 	
 	return (jint)0;
 }
 
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_nativeSetParity(JNIEnv* env, jobject obj, jstring portName, jint parityOption)
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_nativeSetParity(JNIEnv* env, jobject obj, jlong portHandle, jint parityOption)
 {
 	DCB portOptions;
-	HANDLE portHandle;
 	CHAR nativeParityOption = (CHAR)parityOption;
-	const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
-	
-	portHandle = CreateFile((LPCSTR)name,
-				GENERIC_READ | GENERIC_WRITE,
-				0,
-				0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				0);
-	
-	if(portHandle == INVALID_HANDLE_VALUE)
+
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
 	}
 	
 	//all preliminary stuff done, time to actually change the configuration.
-	if(GetCommState(portHandle, &portOptions) == 0)
+	if(GetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
@@ -307,25 +353,18 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_nativeSetParity
 	portOptions.Parity = nativeParityOption;
 	portOptions.DCBlength = sizeof(DCB);
 	
-	if(SetCommState(portHandle, &portOptions) == 0)
+	if(SetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
-	}
-	
-	if(CloseHandle(portHandle) == 0)
-	{
-		return (jint)3;
 	}
 	
 	return (jint)0;
 }
 
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setParityOn(JNIEnv* env, jobject obj, jstring portName, jboolean parityOn)
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setParityOn(JNIEnv* env, jobject obj, jlong portHandle, jboolean parityOn)
 {
 	DCB portOptions;
-	HANDLE portHandle;
 	DWORD nativeParityOn;
-	const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
 	
 	if(parityOn == JNI_TRUE)
 	{
@@ -336,21 +375,13 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setParityOn(JNI
 		nativeParityOn = FALSE;
 	}
 	
-	portHandle = CreateFile((LPCSTR)name,
-				GENERIC_READ | GENERIC_WRITE,
-				0,
-				0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				0);
-	
-	if(portHandle == INVALID_HANDLE_VALUE)
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
 	}
 	
 	//all preliminary stuff done, time to actually change the configuration.
-	if(GetCommState(portHandle, &portOptions) == 0)
+	if(GetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
@@ -358,25 +389,25 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setParityOn(JNI
 	portOptions.fParity = nativeParityOn;
 	portOptions.DCBlength = sizeof(DCB);
 	
-	if(SetCommState(portHandle, &portOptions) == 0)
+	if(SetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
 	
-	if(CloseHandle(portHandle) == 0)
+	/*if(CloseHandle(portHandle) == 0)
 	{
 		return (jint)3;
-	}
+	}*/
 	
 	return (jint)0;
 }
 
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setOutXCTSDSR(JNIEnv* env, jobject obj, jstring portName, jboolean enable)
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setOutXCTSDSR(JNIEnv* env, jobject obj, jlong portHandle, jboolean enable)
 {
 	DCB portOptions;
-	HANDLE portHandle;
+	//HANDLE portHandle;
 	DWORD nativeEnable;
-	const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
+	//const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
 	
 	if(enable == JNI_TRUE)
 	{
@@ -387,21 +418,21 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setOutXCTSDSR(J
 		nativeEnable = FALSE;
 	}
 	
-	portHandle = CreateFile((LPCSTR)name,
+	/*portHandle = CreateFile((LPCSTR)name,
 				GENERIC_READ | GENERIC_WRITE,
 				0,
 				0,
 				OPEN_EXISTING,
 				FILE_ATTRIBUTE_NORMAL,
-				0);
+				0);*/
 	
-	if(portHandle == INVALID_HANDLE_VALUE)
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
 	}
 	
 	//all preliminary stuff done, time to actually change the configuration.
-	if(GetCommState(portHandle, &portOptions) == 0)
+	if(GetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
@@ -409,26 +440,26 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setOutXCTSDSR(J
 	portOptions.fOutxCtsFlow = portOptions.fOutxDsrFlow = nativeEnable;
 	portOptions.DCBlength = sizeof(DCB);
 	
-	if(SetCommState(portHandle, &portOptions) == 0)
+	if(SetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
 	
-	if(CloseHandle(portHandle) == 0)
+	/*if(CloseHandle(portHandle) == 0)
 	{
 		return (jint)3;
-	}
+	}*/
 	
 	return (jint)0;
 }
 
 //
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDTRControl(JNIEnv* env, jobject obj, jstring portName, jint dtrOption)
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDTRControl(JNIEnv* env, jobject obj, jlong portHandle, jint dtrOption)
 {
 	DCB portOptions;
-	HANDLE portHandle;
+	//HANDLE portHandle;
 	DWORD nativeDTROption = (DWORD)dtrOption;
-	const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
+	//const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
 	
 	if(dtrOption == JNI_TRUE)
 	{
@@ -439,21 +470,21 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDTRControl(J
 		nativeDTROption = FALSE;
 	}
 	
-	portHandle = CreateFile((LPCSTR)name,
+	/*portHandle = CreateFile((LPCSTR)name,
 				GENERIC_READ | GENERIC_WRITE,
 				0,
 				0,
 				OPEN_EXISTING,
 				FILE_ATTRIBUTE_NORMAL,
-				0);
+				0);*/
 	
-	if(portHandle == INVALID_HANDLE_VALUE)
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
 	}
 	
 	//all preliminary stuff done, time to actually change the configuration.
-	if(GetCommState(portHandle, &portOptions) == 0)
+	if(GetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
@@ -461,18 +492,68 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDTRControl(J
 	portOptions.fDtrControl = nativeDTROption;
 	portOptions.DCBlength = sizeof(DCB);
 	
-	if(SetCommState(portHandle, &portOptions) == 0)
+	if(SetCommState((HANDLE)portHandle, &portOptions) == 0)
 	{
 		return (jint)4;
 	}
 	
-	if(CloseHandle(portHandle) == 0)
+	/*if(CloseHandle(portHandle) == 0)
 	{
 		return (jint)3;
-	}
+	}*/
 	
 	return (jint)0;
 }
 
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDiscardNull(JNIEnv* env, jobject obj, jlong portHandle, jboolean discardNull)
+{
+	DCB portOptions;
+	//HANDLE portHandle;
+	DWORD nativeDiscardNull;
+	//const jbyte* name = (*env)->GetStringUTFChars(env, portName, 0);
+	
+	if(discardNull == JNI_TRUE)
+	{
+		nativeDiscardNull = TRUE;
+	}
+	else
+	{
+		nativeDiscardNull = FALSE;
+	}
+	
+	/*portHandle = CreateFile((LPCSTR)name,
+				GENERIC_READ | GENERIC_WRITE,
+				0,
+				0,
+				OPEN_EXISTING,
+				FILE_ATTRIBUTE_NORMAL,
+				0);*/
+	
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
+	{
+		return (jint)2;
+	}
+	
+	//all preliminary stuff done, time to actually change the configuration.
+	if(GetCommState((HANDLE)portHandle, &portOptions) == 0)
+	{
+		return (jint)4;
+	}
+	
+	portOptions.fNull = nativeDiscardNull;
+	portOptions.DCBlength = sizeof(DCB);
+	
+	if(SetCommState((HANDLE)portHandle, &portOptions) == 0)
+	{
+		return (jint)4;
+	}
+	
+	/*if(CloseHandle(portHandle) == 0)
+	{
+		return (jint)3;
+	}*/
+	
+	return (jint)0;
+}
 
 void main(){}
