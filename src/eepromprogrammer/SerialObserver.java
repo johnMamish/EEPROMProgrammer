@@ -10,5 +10,14 @@ package eepromprogrammer;
  */
 public abstract class SerialObserver
 {
+    /*
+     * This method is called whenever a new array of bytes is recieved.
+     */
     abstract void bytesReceived(byte[] data);
+    
+    /*
+     * Whenever the SerialListeningLoop checks the status of the connection, 
+     * this method is called.
+     */
+    abstract void connectionStatusUpdated(boolean connected);
 }

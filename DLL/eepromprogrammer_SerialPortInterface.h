@@ -7,21 +7,85 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef eepromprogrammer_SerialPortInterface_INVALID_PORT_HANDLE
+#define eepromprogrammer_SerialPortInterface_INVALID_PORT_HANDLE -1i64
+#undef eepromprogrammer_SerialPortInterface_EVEN_PARITY
+#define eepromprogrammer_SerialPortInterface_EVEN_PARITY 2L
+#undef eepromprogrammer_SerialPortInterface_MARK_PARITY
+#define eepromprogrammer_SerialPortInterface_MARK_PARITY 3L
+#undef eepromprogrammer_SerialPortInterface_NO_PARITY
+#define eepromprogrammer_SerialPortInterface_NO_PARITY 0L
+#undef eepromprogrammer_SerialPortInterface_ODD_PARITY
+#define eepromprogrammer_SerialPortInterface_ODD_PARITY 1L
+#undef eepromprogrammer_SerialPortInterface_SPACE_PARITY
+#define eepromprogrammer_SerialPortInterface_SPACE_PARITY 4L
+#undef eepromprogrammer_SerialPortInterface_ONE_STOP_BIT
+#define eepromprogrammer_SerialPortInterface_ONE_STOP_BIT 0L
+#undef eepromprogrammer_SerialPortInterface_ONE_POINT_FIVE_STOP_BITS
+#define eepromprogrammer_SerialPortInterface_ONE_POINT_FIVE_STOP_BITS 1L
+#undef eepromprogrammer_SerialPortInterface_TWO_STOP_BITS
+#define eepromprogrammer_SerialPortInterface_TWO_STOP_BITS 2L
+#undef eepromprogrammer_SerialPortInterface_HANDSHAKE_NONE
+#define eepromprogrammer_SerialPortInterface_HANDSHAKE_NONE 0L
+#undef eepromprogrammer_SerialPortInterface_HANDSHAKE_XON_XOFF
+#define eepromprogrammer_SerialPortInterface_HANDSHAKE_XON_XOFF 1L
+#undef eepromprogrammer_SerialPortInterface_HANDSHAKE_RTS_CTS
+#define eepromprogrammer_SerialPortInterface_HANDSHAKE_RTS_CTS 2L
+#undef eepromprogrammer_SerialPortInterface_RTS_CONTROL_DISABLE
+#define eepromprogrammer_SerialPortInterface_RTS_CONTROL_DISABLE 0L
+#undef eepromprogrammer_SerialPortInterface_RTS_CONTROL_ENABLE
+#define eepromprogrammer_SerialPortInterface_RTS_CONTROL_ENABLE 1L
+#undef eepromprogrammer_SerialPortInterface_RTS_CONTROL_HANDSHAKE
+#define eepromprogrammer_SerialPortInterface_RTS_CONTROL_HANDSHAKE 2L
+#undef eepromprogrammer_SerialPortInterface_RTS_CONTROL_TOGGLE
+#define eepromprogrammer_SerialPortInterface_RTS_CONTROL_TOGGLE 3L
+#undef eepromprogrammer_SerialPortInterface_BAUDRATE
+#define eepromprogrammer_SerialPortInterface_BAUDRATE 0L
+#undef eepromprogrammer_SerialPortInterface_FPARITY
+#define eepromprogrammer_SerialPortInterface_FPARITY 1L
+#undef eepromprogrammer_SerialPortInterface_FOUTXCTSFLOW
+#define eepromprogrammer_SerialPortInterface_FOUTXCTSFLOW 2L
+#undef eepromprogrammer_SerialPortInterface_FOUTXDSRFLOW
+#define eepromprogrammer_SerialPortInterface_FOUTXDSRFLOW 3L
+#undef eepromprogrammer_SerialPortInterface_FDTRCONTROL
+#define eepromprogrammer_SerialPortInterface_FDTRCONTROL 4L
+#undef eepromprogrammer_SerialPortInterface_FDSRSENSITIVITY
+#define eepromprogrammer_SerialPortInterface_FDSRSENSITIVITY 5L
+#undef eepromprogrammer_SerialPortInterface_FTXCONTINUEONXOFF
+#define eepromprogrammer_SerialPortInterface_FTXCONTINUEONXOFF 6L
+#undef eepromprogrammer_SerialPortInterface_FOUTX
+#define eepromprogrammer_SerialPortInterface_FOUTX 7L
+#undef eepromprogrammer_SerialPortInterface_FINX
+#define eepromprogrammer_SerialPortInterface_FINX 8L
+#undef eepromprogrammer_SerialPortInterface_FERRORCHAR
+#define eepromprogrammer_SerialPortInterface_FERRORCHAR 9L
+#undef eepromprogrammer_SerialPortInterface_FNULL
+#define eepromprogrammer_SerialPortInterface_FNULL 10L
+#undef eepromprogrammer_SerialPortInterface_FRTSCONTROL
+#define eepromprogrammer_SerialPortInterface_FRTSCONTROL 11L
+#undef eepromprogrammer_SerialPortInterface_FABORTONERROR
+#define eepromprogrammer_SerialPortInterface_FABORTONERROR 12L
+#undef eepromprogrammer_SerialPortInterface_BYTESIZE
+#define eepromprogrammer_SerialPortInterface_BYTESIZE 13L
+#undef eepromprogrammer_SerialPortInterface_PARITY
+#define eepromprogrammer_SerialPortInterface_PARITY 14L
+#undef eepromprogrammer_SerialPortInterface_STOPBITS
+#define eepromprogrammer_SerialPortInterface_STOPBITS 15L
 /*
  * Class:     eepromprogrammer_SerialPortInterface
  * Method:    openPort
  * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_eepromprogrammer_SerialPortInterface_openPort
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     eepromprogrammer_SerialPortInterface
  * Method:    closePort
- * Signature: (J)J
+ * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_closePort
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     eepromprogrammer_SerialPortInterface
@@ -29,7 +93,7 @@ JNIEXPORT jboolean JNICALL Java_eepromprogrammer_SerialPortInterface_closePort
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_eepromprogrammer_SerialPortInterface_firstPortAvailable
-  (JNIEnv *, jobject);
+  (JNIEnv *, jclass);
 
 /*
  * Class:     eepromprogrammer_SerialPortInterface
@@ -37,31 +101,7 @@ JNIEXPORT jstring JNICALL Java_eepromprogrammer_SerialPortInterface_firstPortAva
  * Signature: (J[B)I
  */
 JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_writeToPort
-  (JNIEnv *, jobject, jlong, jbyteArray);
-
-/*
- * Class:     eepromprogrammer_SerialPortInterface
- * Method:    setBaudRate
- * Signature: (JI)I
- */
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setBaudRate
-  (JNIEnv *, jobject, jlong, jint);
-
-/*
- * Class:     eepromprogrammer_SerialPortInterface
- * Method:    setStopBits
- * Signature: (JI)I
- */
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setStopBits
-  (JNIEnv *, jobject, jlong, jint);
-
-/*
- * Class:     eepromprogrammer_SerialPortInterface
- * Method:    setByteSize
- * Signature: (JI)I
- */
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setByteSize
-  (JNIEnv *, jobject, jlong, jint);
+  (JNIEnv *, jclass, jlong, jbyteArray);
 
 /*
  * Class:     eepromprogrammer_SerialPortInterface
@@ -69,47 +109,23 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setByteSize
  * Signature: (JI)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_eepromprogrammer_SerialPortInterface_readPort
-  (JNIEnv *, jobject, jlong, jint);
+  (JNIEnv *, jclass, jlong, jint);
 
 /*
  * Class:     eepromprogrammer_SerialPortInterface
- * Method:    nativeSetParity
- * Signature: (JI)I
+ * Method:    handleValid
+ * Signature: (J)I
  */
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_nativeSetParity
-  (JNIEnv *, jobject, jlong, jint);
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_handleValid
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     eepromprogrammer_SerialPortInterface
- * Method:    setParityOn
- * Signature: (JZ)I
+ * Method:    configureSerialPort
+ * Signature: (JII)I
  */
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setParityOn
-  (JNIEnv *, jobject, jlong, jboolean);
-
-/*
- * Class:     eepromprogrammer_SerialPortInterface
- * Method:    setOutXCTSDSR
- * Signature: (JZ)I
- */
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setOutXCTSDSR
-  (JNIEnv *, jobject, jlong, jboolean);
-
-/*
- * Class:     eepromprogrammer_SerialPortInterface
- * Method:    setDTRControl
- * Signature: (JI)I
- */
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDTRControl
-  (JNIEnv *, jobject, jlong, jint);
-
-/*
- * Class:     eepromprogrammer_SerialPortInterface
- * Method:    setDiscardNull
- * Signature: (JZ)I
- */
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDiscardNull
-  (JNIEnv *, jobject, jlong, jboolean);
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_configureSerialPort
+  (JNIEnv *, jclass, jlong, jint, jint);
 
 #ifdef __cplusplus
 }

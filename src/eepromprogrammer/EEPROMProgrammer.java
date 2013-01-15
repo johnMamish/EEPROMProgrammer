@@ -18,6 +18,7 @@ public class EEPROMProgrammer
      */
     public static void main(String[] args)
     {
+        SerialPortInterface.LoadLibrary();
         JFrame foo = new MainWindow();
         foo.setTitle("EEPROM Programmer");
         foo.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

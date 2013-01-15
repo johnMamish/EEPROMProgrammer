@@ -8,13 +8,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Enumeration;
-import javax.comm.*;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.*;
 
@@ -32,6 +31,7 @@ public class ConnectionManagerWindow extends JFrame
     //<editor-fold>
     //holds a refernece to the parent JFrame
     private JFrame parent;
+    SerialListeningLoop sll;
     
     //holds a reference to this
     private JFrame thisJF = this;
@@ -50,19 +50,15 @@ public class ConnectionManagerWindow extends JFrame
     
     //contains all of the handshakes
     int[] handshakes = {
-        SerialPort.FLOWCONTROL_NONE,
-        SerialPort.FLOWCONTROL_RTSCTS_IN,
-        SerialPort.FLOWCONTROL_RTSCTS_OUT,
-        SerialPort.FLOWCONTROL_XONXOFF_IN,
-        SerialPort.FLOWCONTROL_XONXOFF_OUT
+        SerialPortInterface.HANDSHAKE_NONE,
+        SerialPortInterface.HANDSHAKE_RTS_CTS,
+        SerialPortInterface.HANDSHAKE_XON_XOFF
     };
     
     String[] handshakeNames = {
-        "No Flow Control",
-        "RTS CTS In",
-        "RTS CTS Out",
-        "XONXOFF In",
-        "XONXOFF Out"
+        "None",
+        "RTS, CTS",
+        "XON, XOFF"
     };
     //</editor-fold>
     
@@ -80,7 +76,8 @@ public class ConnectionManagerWindow extends JFrame
     private JButton okButton;
     private JButton cancelButton;
     //</editor-fold>
-    //</editor-fold> 
+    //</editor-fold>
+    
     //inner classes
     //<editor-fold>
     //inner class that allows us to customize closing windows.
@@ -95,12 +92,68 @@ public class ConnectionManagerWindow extends JFrame
     }
     
     //observer class for ok button
+    //Sets up the selected brate and handshakes and then opens the port
+    //via the listening loop.
     class okActionListener implements ActionListener
     {
         @Override
         public void actionPerformed(ActionEvent e)
         {
-            //TODO add code to set Serial Port options
+            //apply the selected options to the selected port
+            String portName = portComboBox.getSelectedItem().toString();
+            long thePort = SerialPortInterface.openPort(portName);
+            if(thePort == SerialPortInterface.INVALID_PORT_HANDLE)
+            {
+                JOptionPane.showMessageDialog(null, "Warning: No connection is available.  Select \'cancel\' to exit window without connecting.", "Warning", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            int errorCollect = 0;
+            errorCollect |= SerialPortInterface.setBaudRate(thePort, brates[brateComboBox.getSelectedIndex()]);
+            errorCollect |= SerialPortInterface.setHandshaking(thePort, handshakes[handshakeComboBox.getSelectedIndex()]);
+            errorCollect |= SerialPortInterface.setByteSize(thePort, 8);
+            errorCollect |= SerialPortInterface.setParity(thePort, SerialPortInterface.NO_PARITY);
+            
+            if(errorCollect != 0)
+            {
+                JOptionPane.showMessageDialog(null, "Warning: Port successfully opened, but options could not be applied.  No connection will be made.  Select \'cancel\' to exit window without connecting.", "Warning", JOptionPane.ERROR_MESSAGE);
+                SerialPortInterface.closePort(thePort);
+                return;
+            }
+            //check to make sure it is the right device with a ping.
+            SerialPortInterface.writeToPort(thePort, new byte[]{0x03});
+            
+            long startWaitTime = System.currentTimeMillis();
+            byte[] pingResult = {0};
+            
+            //read port until we have recieved some kind of response or we have timed out.
+            //if readPort doesn't recieve something right away, pingResult's length will
+            //become 0.  We need to prevent this from causing trouble in the while loop...
+            while(((pingResult.length == 0) || (pingResult[0] == 0x00)) && ((System.currentTimeMillis()-startWaitTime) < 250))
+            {
+                pingResult = SerialPortInterface.readPort(thePort, 1);
+                if(pingResult == null)
+                    break;
+            }
+            if((pingResult.length == 0) || (pingResult[0] != (byte)(-86)))
+            {
+                JOptionPane.showMessageDialog(null, "Warning: Connected device is not the right one.  Connection not made.", "Warning", JOptionPane.ERROR_MESSAGE);
+                SerialPortInterface.closePort(thePort);
+                return;
+            }
+            
+            //open the socket listening loop
+            sll.open(thePort);
+
+            Window w = new Window(thisJF);
+            w.getToolkit().getSystemEventQueue().postEvent(new WindowEvent(thisJF, WindowEvent.WINDOW_CLOSING));
+        }
+    }
+    
+    class cancelActionListener implements ActionListener
+    {
+        @Override
+        public void actionPerformed(ActionEvent e)
+        {
             Window w = new Window(thisJF);
             w.getToolkit().getSystemEventQueue().postEvent(new WindowEvent(thisJF, WindowEvent.WINDOW_CLOSING));
         }
@@ -124,7 +177,7 @@ public class ConnectionManagerWindow extends JFrame
     //</editor-fold>
     //</editor-fold>
     
-    public ConnectionManagerWindow(JFrame parent)
+    public ConnectionManagerWindow(JFrame parent, SerialListeningLoop sll)
     {
         //take care of business related to focusing parent
         //<editor-fold>
@@ -132,6 +185,10 @@ public class ConnectionManagerWindow extends JFrame
         this.parent.setFocusable(false);
         this.parent.setFocusableWindowState(false);
         this.toFront();
+        
+        //close serial listening loop and port.
+        this.sll = sll;
+        sll.close();
         
         //apply window closing action
         this.addWindowListener(new WindowCloser());
@@ -149,12 +206,7 @@ public class ConnectionManagerWindow extends JFrame
         //initialize all comboboxes
         //<editor-fold>
         portComboBox = new JComboBox();
-        for(Enumeration e = CommPortIdentifier.getPortIdentifiers();e.hasMoreElements();)
-        {
-            CommPortIdentifier foo = (CommPortIdentifier)e.nextElement();
-            System.out.println(foo.getName());
-            portComboBox.addItem(new ComboBoxStringHolder(foo.getName()));
-        }
+        portComboBox.addItem(SerialPortInterface.firstPortAvailable());
         
         brateComboBox = new JComboBox();
         //add all baud reates to brate combo box
@@ -177,7 +229,7 @@ public class ConnectionManagerWindow extends JFrame
         okButton.addActionListener(new okActionListener());
         
         cancelButton = new JButton("cancel");
-        //cancelButton.addActionListener(new cancelActionListener());
+        cancelButton.addActionListener(new cancelActionListener());
         //</editor-fold>
         //</editor-fold>
         

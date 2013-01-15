@@ -34,7 +34,8 @@ JNIEXPORT jstring JNICALL Java_eepromprogrammer_SerialPortInterface_firstPortAva
 	char javaPortName[16];
 	LPSTR portName = (LPSTR)malloc(6*sizeof(CHAR));
 	LPCSTR portNameConst = (LPCSTR)portName;
-	strcpy(portName, "COM0");	
+	strcpy(portName, "COM0");
+	portName[4] = '\0';
 
 
 
@@ -51,7 +52,7 @@ JNIEXPORT jstring JNICALL Java_eepromprogrammer_SerialPortInterface_firstPortAva
 		if(portHandle != INVALID_HANDLE_VALUE)
 		{
 			int copyI;
-			for(copyI = 0;*(portName+copyI) != (CHAR)'\0';copyI++)
+			for(copyI = 0;*(portName+copyI-1) != (CHAR)'\0';copyI++)
 			{
 				javaPortName[copyI] = (char)(*(portName+copyI));
 			}
@@ -187,20 +188,20 @@ JNIEXPORT jbyteArray JNICALL Java_eepromprogrammer_SerialPortInterface_readPort(
 		return (jbyteArray)0;
 	}
 	
-	// Specify time-out between charactor for receiving.
-	comTimeOut.ReadIntervalTimeout = 3;
-	// Specify value that is multiplied 
-	// by the requested number of bytes to be read. 
-	comTimeOut.ReadTotalTimeoutMultiplier = 3;
-	// Specify value is added to the product of the 
-	// ReadTotalTimeoutMultiplier member
-	comTimeOut.ReadTotalTimeoutConstant = 2;
-	// Specify value that is multiplied 
-	// by the requested number of bytes to be sent. 
+	//All fields of the COMMTIMEOUTS structure are in milliseconds.
+	//Time allowed between characters.
+	comTimeOut.ReadIntervalTimeout = 2;
+	
+	//The following 2 fields define the total time-out of the read
+	//operation.  The time-out is given by
+	//t = ReadTotalTimeoutMultiplier*bytesToRead + ReadTotalTimeoutConstant.
+	comTimeOut.ReadTotalTimeoutMultiplier = 1;
+	comTimeOut.ReadTotalTimeoutConstant = 1;
+	
+	//Same as previous 2 fields but for write, not read.
 	comTimeOut.WriteTotalTimeoutMultiplier = 3;
-	// Specify value is added to the product of the 
-	// WriteTotalTimeoutMultiplier member
 	comTimeOut.WriteTotalTimeoutConstant = 2;
+	
 	// set the time-out parameter into device control.
 	SetCommTimeouts((HANDLE)portHandle,&comTimeOut);
 	
@@ -230,7 +231,7 @@ JNIEXPORT jbyteArray JNICALL Java_eepromprogrammer_SerialPortInterface_readPort(
 //3 - error closing file
 //4 - error manipulating port settings
 //4 - other error
-JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setBaudRate(JNIEnv* env, jobject obj, jlong portHandle, jint brate)
+/*JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setBaudRate(JNIEnv* env, jobject obj, jlong portHandle, jint brate)
 {
 	DCB portOptions;
 	DWORD newBrate;
@@ -394,11 +395,6 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setParityOn(JNI
 		return (jint)4;
 	}
 	
-	/*if(CloseHandle(portHandle) == 0)
-	{
-		return (jint)3;
-	}*/
-	
 	return (jint)0;
 }
 
@@ -418,14 +414,6 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setOutXCTSDSR(J
 		nativeEnable = FALSE;
 	}
 	
-	/*portHandle = CreateFile((LPCSTR)name,
-				GENERIC_READ | GENERIC_WRITE,
-				0,
-				0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				0);*/
-	
 	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
@@ -444,11 +432,6 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setOutXCTSDSR(J
 	{
 		return (jint)4;
 	}
-	
-	/*if(CloseHandle(portHandle) == 0)
-	{
-		return (jint)3;
-	}*/
 	
 	return (jint)0;
 }
@@ -470,14 +453,6 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDTRControl(J
 		nativeDTROption = FALSE;
 	}
 	
-	/*portHandle = CreateFile((LPCSTR)name,
-				GENERIC_READ | GENERIC_WRITE,
-				0,
-				0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				0);*/
-	
 	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
@@ -496,11 +471,6 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDTRControl(J
 	{
 		return (jint)4;
 	}
-	
-	/*if(CloseHandle(portHandle) == 0)
-	{
-		return (jint)3;
-	}*/
 	
 	return (jint)0;
 }
@@ -521,14 +491,6 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDiscardNull(
 		nativeDiscardNull = FALSE;
 	}
 	
-	/*portHandle = CreateFile((LPCSTR)name,
-				GENERIC_READ | GENERIC_WRITE,
-				0,
-				0,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				0);*/
-	
 	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
 	{
 		return (jint)2;
@@ -548,12 +510,236 @@ JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_setDiscardNull(
 		return (jint)4;
 	}
 	
-	/*if(CloseHandle(portHandle) == 0)
+	if(CloseHandle(portHandle) == 0)
 	{
 		return (jint)3;
-	}*/
+	}
 	
 	return (jint)0;
+}*/
+
+//error codes
+//0 - no error
+//1 - invalid brate
+//2 - unable to open port
+//3 - error closing file
+//4 - error manipulating port settings
+//5 - invalid option
+//6 - other error
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_configureSerialPort(JNIEnv* env, jclass obj, jlong portHandle, jint option, jint setting)
+{
+	DCB portOptions;
+	DWORD validBrates[] = {CBR_110, CBR_300, CBR_600, CBR_1200, CBR_2400, CBR_4800, CBR_9600, CBR_14400, CBR_19200, CBR_38400, CBR_57600, CBR_115200, CBR_128000, CBR_256000};
+	DWORD setBrate = 0;
+	
+	portOptions.DCBlength = sizeof(DCB);
+	
+	if((HANDLE)portHandle == INVALID_HANDLE_VALUE)
+		return (jint)2;
+	
+	if(GetCommState((HANDLE)portHandle, &portOptions) == 0)
+	{
+		return (jint)4;
+	}
+	
+	switch((int)option)
+	{
+		//BaudRate
+		case 0:
+		{
+			const int numOfBrates = 14;
+			
+			//make sure the brate is "legal"
+			int i;
+			for(i = 0;i < numOfBrates;i++)
+			{
+				if((int)setting == (int)validBrates[i])
+				{
+					setBrate = validBrates[i];
+					break;
+				}
+			}
+
+			if(setBrate == 0)
+			{
+				return (jint)1;
+			}
+			
+			portOptions.BaudRate = setBrate;
+			break;
+		}
+		
+		//fParity
+		case 1:
+		{
+			if((int)setting)
+				portOptions.fParity = TRUE;
+			else
+				portOptions.fParity = FALSE;
+			
+			break;
+		}
+		
+		//fOutxCtsFlow
+		case 2:
+		{
+			if((int)setting)
+				portOptions.fOutxCtsFlow = TRUE;
+			else
+				portOptions.fOutxCtsFlow = FALSE;
+			
+			break;
+		}
+		
+		//fOutxDsrFlow
+		case 3:
+		{
+			if((int)setting)
+				portOptions.fOutxDsrFlow = TRUE;
+			else
+				portOptions.fOutxDsrFlow = FALSE;
+			
+			break;
+		}
+		
+		//fDtrControl
+		case 4:
+		{
+			portOptions.fDtrControl = (int)setting;
+			
+			break;
+		}
+		
+		//fDsrSensitivity
+		case 5:
+		{
+			if((int)setting)
+				portOptions.fDsrSensitivity = TRUE;
+			else
+				portOptions.fDsrSensitivity = FALSE;
+			
+			break;
+		}
+		
+		//fTXContinueOnXOff
+		case 6:
+		{
+			if((int)setting)
+				portOptions.fTXContinueOnXoff = TRUE;
+			else
+				portOptions.fTXContinueOnXoff = FALSE;
+			
+			break;
+		}
+		
+		//fOutX
+		case 7:
+		{
+			if((int)setting)
+				portOptions.fOutX = TRUE;
+			else
+				portOptions.fOutX = FALSE;
+			
+			break;
+		}
+		
+		//fInX
+		case 8:
+		{
+			if((int)setting)
+				portOptions.fInX = TRUE;
+			else
+				portOptions.fInX = FALSE;
+			
+			break;
+		}
+		
+		//fErrorChar
+		case 9:
+		{
+			if((int)setting)
+				portOptions.fErrorChar = TRUE;
+			else
+				portOptions.fErrorChar = FALSE;
+			
+			break;
+		}
+		
+		//fNull
+		case 10:
+		{
+			if((int)setting)
+				portOptions.fNull = TRUE;
+			else
+				portOptions.fNull = FALSE;
+			
+			break;
+		}
+		
+		//fRtsControl
+		case 11:
+		{
+			portOptions.fRtsControl = (int)setting;
+			
+			break;
+		}
+		
+		//fAbortOnError
+		case 12:
+		{
+			if((int)setting)
+				portOptions.fAbortOnError = TRUE;
+			else
+				portOptions.fAbortOnError = FALSE;
+			
+			break;
+		}
+		
+		//ByteSize
+		case 13:
+		{
+			portOptions.ByteSize = (int)setting;
+			
+			break;
+		}
+		
+		//Parity
+		case 14:
+		{
+			portOptions.Parity = (int)setting;
+			
+			break;
+		}
+		
+		//StopBits
+		case 15:
+		{
+			portOptions.StopBits = (int)setting;
+			
+			break;
+		}
+		
+		default:
+		{
+			return 5;
+		}
+	}
+	
+	if(SetCommState((HANDLE)portHandle, &portOptions) == 0)
+	{
+		return (jint)4;
+	}
+	
+	return (jint)0;
+}
+
+//0 is false, nonzero is true.
+JNIEXPORT jint JNICALL Java_eepromprogrammer_SerialPortInterface_handleValid(JNIEnv* env, jclass obj, jlong portHandle)
+{
+	DCB foo;
+	foo.DCBlength = sizeof(DCB);
+	
+	return GetCommState((HANDLE)portHandle, &foo);
 }
 
 void main(){}
